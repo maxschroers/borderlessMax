@@ -51,6 +51,14 @@ static class SelfTest
                 && Displays.Aspect(1366, 768) == "16:9" && Displays.Aspect(1280, 1024) == "5:4",
             // 17: both languages have the same texts
             () => L.Keys("de").Order().SequenceEqual(L.Keys("en").Order()),
+            // 18-19: games without own size follow the default; own sizes win; tiny sizes are raised
+            () =>
+            {
+                var s = Settings.Parse("""{ "games": [ { "exe": "a.exe", "name": "A" }, { "exe": "b.exe", "name": "B", "width": 1920, "height": 1080 } ], "defaultWidth": 2560, "defaultHeight": 1440 }""");
+                return s.SizeOf(s.Games[0]) == (2560, 1440) && s.SizeOf(s.Games[1]) == (1920, 1080)
+                    && (s with { DefaultWidth = 100, DefaultHeight = 50 }).SizeOf(s.Games[0]) == (320, 200);
+            },
+            () => !new Settings([new("A", "a.exe")]).ToJson().Contains("Width\": null"), // unset sizes stay out of the file
         };
         for (int i = 0; i < checks.Length; i++)
             if (!checks[i]()) return i + 1;

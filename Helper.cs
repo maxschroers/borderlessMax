@@ -59,7 +59,8 @@ static class Helper
         }
 
         var m = MonitorOf(hwnd).rcMonitor;
-        var target = Center(Rectangle.FromLTRB(m.Left, m.Top, m.Right, m.Bottom), game.Width, game.Height);
+        var (w, h) = Settings.SizeOf(game);
+        var target = Center(Rectangle.FromLTRB(m.Left, m.Top, m.Right, m.Bottom), w, h);
 
         GetWindowRect(hwnd, out var r);
         if (styleChanged || Rectangle.FromLTRB(r.Left, r.Top, r.Right, r.Bottom) != target)

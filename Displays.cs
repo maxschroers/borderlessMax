@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using static BorderlessMax.Native;
 
 namespace BorderlessMax;
@@ -9,11 +10,37 @@ public record Resolution(int Width, int Height, string Info)
     public string Size => IsCustom ? L.I["custom"] : $"{Width}x{Height}";
 }
 
-// Resolutions the displays of this PC really offer, for the per-game dropdown.
+// A size picked from the display modes, or "Custom…" with own width / height fields (Theme.xaml: ResolutionPicker).
+public class ResolutionChoice(int width, int height) : INotifyPropertyChanged
+{
+    bool custom;
+
+    public int Width { get => width; set { width = value; Changed(); } }
+    public int Height { get => height; set { height = value; Changed(); } }
+
+    public Resolution Selected
+    {
+        get => custom ? Resolution.Custom : Displays.Modes.FirstOrDefault(m => m.Width == width && m.Height == height) ?? Resolution.Custom;
+        set
+        {
+            if (value is null) return;
+            custom = value.IsCustom;
+            if (!custom) (width, height) = (value.Width, value.Height);
+            Changed();
+        }
+    }
+    public bool IsCustom => Selected.IsCustom;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    void Changed() => PropertyChanged?.Invoke(this, new("")); // "" = every property
+}
+
+// Resolutions the displays of this PC really offer, for the resolution dropdowns.
 static class Displays
 {
-    static List<Resolution>? modes;
+    static List<Resolution>? modes, choices;
     public static List<Resolution> Modes => modes ??= Build(Query());
+    public static List<Resolution> Choices => choices ??= [.. Modes, Resolution.Custom]; // the dropdown's items
 
     static IEnumerable<(string Screen, int W, int H)> Query()
     {

@@ -4,13 +4,15 @@ using System.Text.Json.Serialization;
 
 namespace BorderlessMax;
 
-// Exe is matched against the process name; Path only gives the list its icon
-public record Game(string Name, string Exe, int Width, int Height, bool Enabled = true, string? Path = null);
+// Exe is matched against the process name; Path only gives the list its icon; no Width / Height = the default size
+public record Game(string Name, string Exe, int? Width = null, int? Height = null, bool Enabled = true, string? Path = null);
 
 public enum TaskbarScope { GameScreen, AllScreens }
 
-// Stretch: taskbar auto-hide while playing, so maximized windows reach the bottom of the screen
-public record Settings(List<Game> Games, TaskbarScope Taskbar = TaskbarScope.GameScreen, bool Stretch = true, string? Lang = null)
+// Stretch: taskbar auto-hide while playing, so maximized windows reach the bottom of the screen.
+// DefaultWidth / DefaultHeight 0 = 16:9 at the height of the main screen.
+public record Settings(List<Game> Games, TaskbarScope Taskbar = TaskbarScope.GameScreen, bool Stretch = true, string? Lang = null,
+    int DefaultWidth = 0, int DefaultHeight = 0)
 {
     // %APPDATA%, not next to the exe: survives updates and is the same for the portable and the installed copy
     public static readonly string Dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), App.Name);
@@ -19,7 +21,26 @@ public record Settings(List<Game> Games, TaskbarScope Taskbar = TaskbarScope.Gam
     {
         WriteIndented = true, PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true, Converters = { new JsonStringEnumConverter() },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
+
+    [JsonIgnore]
+    public (int W, int H) DefaultSize
+    {
+        get
+        {
+            if (DefaultWidth > 0 && DefaultHeight > 0) return (DefaultWidth, DefaultHeight);
+            var screen = System.Windows.Forms.Screen.PrimaryScreen!.Bounds;
+            return Displays.DefaultSize(screen.Width, screen.Height);
+        }
+    }
+
+    // a game's own size, else the default; never smaller than a usable window (the screen size caps it in Helper.Center)
+    public (int W, int H) SizeOf(Game g)
+    {
+        var (w, h) = g.Width is int gw && g.Height is int gh ? (gw, gh) : DefaultSize;
+        return (Math.Max(w, 320), Math.Max(h, 200));
+    }
 
     public static Settings Load()
     {

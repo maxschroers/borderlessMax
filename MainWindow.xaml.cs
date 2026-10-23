@@ -11,48 +11,41 @@ public record LangItem(string Code, string Name, ImageSource Flag);
 
 public class GameRow(Game game) : INotifyPropertyChanged
 {
-    public string Name { get; } = game.Name;
-    public string Exe { get; } = game.Exe;
-    public string? Path { get; } = game.Path;
-    public ImageSource? Icon => Path is null ? null : Apps.Icon(Path);
-    int width = game.Width, height = game.Height;
-    bool enabled = game.Enabled, custom;
+    public Game Game { get; private set; } = game;
+    public string Name => Game.Name;
+    public string Exe => Game.Exe;
+    public ImageSource? Icon => Game.Path is null ? null : Apps.Icon(Game.Path);
+    public bool Enabled { get => Game.Enabled; set => Update(Game with { Enabled = value }); }
 
-    public int Width { get => width; set { width = value; Changed(); } }
-    public int Height { get => height; set { height = value; Changed(); } }
-    public bool Enabled { get => enabled; set { enabled = value; Changed(); } }
+    // "2560x1440 · default" or "1920x1080 · 16:9"
+    public string Size => $"{Helper.Settings.SizeOf(Game).W}x{Helper.Settings.SizeOf(Game).H}";
+    public string SizeInfo => Game.Width is null ? L.I["default_tag"] : Displays.Aspect(Helper.Settings.SizeOf(Game).W, Helper.Settings.SizeOf(Game).H);
 
-    // the matching display mode, or "Custom…" (then the width / height fields show)
-    public Resolution Selected
+    public void Update(Game g)
     {
-        get => custom ? Resolution.Custom : Displays.Modes.FirstOrDefault(m => m.Width == width && m.Height == height) ?? Resolution.Custom;
-        set
-        {
-            if (value is null) return;
-            custom = value.IsCustom;
-            if (!custom) (width, height) = (value.Width, value.Height);
-            Changed();
-        }
+        Game = g;
+        Refresh();
+        Edited?.Invoke();
     }
-    public bool IsCustom => Selected.IsCustom;
 
-    public Game ToGame() => new(Name, Exe, width, height, enabled, Path);
+    public void Refresh() => PropertyChanged?.Invoke(this, new("")); // "" = every property
 
+    public event Action? Edited;
     public event PropertyChangedEventHandler? PropertyChanged;
-    void Changed() => PropertyChanged?.Invoke(this, new("")); // "" = every property
 }
 
+// Every change is saved right away: the games, the default size, the taskbar options, the language.
 public partial class MainWindow : Window, INotifyPropertyChanged
 {
     public ObservableCollection<GameRow> Rows { get; } = [];
-    public List<Resolution> Resolutions { get; } = [.. Displays.Modes, Resolution.Custom];
+    public ResolutionChoice Default { get; }
     public List<LangItem> LangItems { get; } =
         L.Languages.Select(l => new LangItem(l.Key, l.Value, (ImageSource)Application.Current.FindResource("Flag_" + l.Key))).ToList();
     public string VersionText { get; } = Installer.Version == "dev" ? "dev" : "v" + Installer.Version;
 
     int scope;
-    bool stretch, autostart;
-    string saved = "";
+    bool stretch;
+    bool loading = true;
     Installer.Update? update;
     public bool Quitting;
 
@@ -62,73 +55,49 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Icon = Dialog.Icon;
         DataContext = this;
         SourceInitialized += (_, _) => Dialog.DarkTitleBar(this);
-        Rows.CollectionChanged += (_, _) => Notify(nameof(NoGames));
-        Helper.ActiveChanged += _ => Notify(nameof(StatusText), nameof(StatusBrush));
-        Load();
-        if (!Installer.Installed) ShowAction = true; // portable: offer the install
+        Rows.CollectionChanged += (_, _) => Changed(nameof(NoGames));
+
+        var s = Helper.Settings;
+        foreach (var g in s.Games) AddRow(g);
+        var (w, h) = s.DefaultSize;
+        Default = new ResolutionChoice(w, h);
+        Default.PropertyChanged += (_, _) => Persist();
+        scope = (int)s.Taskbar;
+        stretch = s.Stretch;
+        ShowAction = !Installer.Installed; // portable: offer the install
+        loading = false;
     }
 
-    public int ScopeIndex { get => scope; set { scope = value; Changed(); } }
-    public bool Stretch { get => stretch; set { stretch = value; Changed(); } }
-    public bool Autostart { get => autostart; set { autostart = value; Changed(); } }
+    public int ScopeIndex { get => scope; set { scope = value; Persist(); } }
+    public bool Stretch { get => stretch; set { stretch = value; Persist(); } }
+    public bool Autostart { get => Installer.Autostart; set => Installer.SetAutostart(value); }
     public bool NoGames => Rows.Count == 0;
 
-    // the language applies and is stored right away, like in captureMax; everything else waits for Save
     public string Lang
     {
         get => L.I.Lang;
         set
         {
             L.I.Lang = value;
-            Helper.Settings = Helper.Settings with { Lang = value };
-            Helper.Settings.Save();
-            Notify(nameof(StatusText), nameof(ActionText));
+            Persist();
+            Changed(nameof(ActionText));
         }
     }
 
-    public bool Dirty => Snapshot(Current(), autostart) != saved;
-
-    public string StatusText => Helper.Active is Game g ? L.I.Format("active", g.Exe, g.Width, g.Height) : L.I["ready"];
-    public Brush StatusBrush => (Brush)FindResource(Helper.Active is null ? "Muted" : "Green");
-
-    string? progress;
-    public bool ShowAction { get; private set { field = value; Changed(); } }
-    public bool ActionEnabled => progress is null;
-    public string ActionText => progress ?? (update is { } u ? L.I.Format("update", u.Version) : L.I["install"]);
-
-    void Load()
+    void Persist()
     {
-        var s = Helper.Settings;
-        Rows.Clear();
-        foreach (var g in s.Games) AddRow(g);
-        scope = (int)s.Taskbar;
-        stretch = s.Stretch;
-        autostart = Installer.Autostart;
-        saved = Snapshot(s, autostart);
-        Notify(""); // refresh every binding
+        if (loading) return;
+        Helper.Settings = new Settings(Rows.Select(r => r.Game).ToList(), (TaskbarScope)scope, stretch, L.I.Lang, Default.Width, Default.Height);
+        Helper.Settings.Save();
+        Helper.ShowTaskbar(); // the next tick hides it again with the new settings
+        foreach (var r in Rows) r.Refresh(); // sizes that follow the default
     }
 
     void AddRow(Game g)
     {
         var row = new GameRow(g);
-        row.PropertyChanged += (_, _) => Notify(nameof(Dirty));
+        row.Edited += Persist;
         Rows.Add(row);
-        Notify(nameof(Dirty));
-    }
-
-    Settings Current() => new(Rows.Select(r => r.ToGame()).ToList(), (TaskbarScope)scope, stretch, L.I.Lang);
-    static string Snapshot(Settings s, bool autostart) => (s with { Lang = null }).ToJson() + autostart;
-
-    void Save_Click(object sender, RoutedEventArgs e)
-    {
-        var biggest = System.Windows.Forms.Screen.AllScreens.Select(s => s.Bounds).MaxBy(b => b.Width * b.Height);
-        var s = Current();
-        s = s with { Games = s.Games.Select(g => g with { Width = Math.Clamp(g.Width, 320, biggest.Width), Height = Math.Clamp(g.Height, 200, biggest.Height) }).ToList() };
-        s.Save();
-        Helper.Settings = s;
-        Helper.ShowTaskbar(); // the next tick hides it again with the new settings
-        if (autostart != Installer.Autostart) Installer.SetAutostart(autostart);
-        Load();
     }
 
     void Add_Click(object sender, RoutedEventArgs e)
@@ -136,19 +105,34 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var picker = new AppPicker { Owner = this };
         if (picker.ShowDialog() != true || picker.Picked is not AppEntry app) return;
         if (Rows.Any(r => r.Exe.Equals(app.Exe, StringComparison.OrdinalIgnoreCase))) return;
-        var screen = System.Windows.Forms.Screen.PrimaryScreen!.Bounds;
-        var (w, h) = Displays.DefaultSize(screen.Width, screen.Height);
-        AddRow(new Game(app.Name, app.Exe, w, h, true, app.Path));
+        AddRow(new Game(app.Name, app.Exe, Path: app.Path)); // follows the default size until edited
+        Persist();
     }
 
-    void Remove_Click(object sender, RoutedEventArgs e) => Rows.Remove((GameRow)((Button)sender).DataContext);
+    void Edit_Click(object sender, RoutedEventArgs e)
+    {
+        var row = (GameRow)((Button)sender).DataContext;
+        var editor = new GameEditor(row.Game, Helper.Settings.DefaultSize) { Owner = this };
+        if (editor.ShowDialog() == true) row.Update(editor.Result!);
+    }
+
+    void Remove_Click(object sender, RoutedEventArgs e)
+    {
+        Rows.Remove((GameRow)((Button)sender).DataContext);
+        Persist();
+    }
 
     // ---- install / update (captureMax: Main.install, show_update, self_update)
+    string? progress;
+    public bool ShowAction { get; private set { field = value; Changed(); } }
+    public bool ActionEnabled => progress is null;
+    public string ActionText => progress ?? (update is { } u ? L.I.Format("update", u.Version) : L.I["install"]);
+
     internal void ShowUpdate(Installer.Update u)
     {
         update = u;
         ShowAction = true;
-        Notify(nameof(ActionText));
+        Changed(nameof(ActionText));
         if (IsVisible && Dialog.Ask(this, L.I.Format(u.Url is null ? "update_ask" : "update_self", "v" + u.Version, VersionText))) _ = RunUpdate();
     }
 
@@ -189,27 +173,18 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     void SetProgress(string? text)
     {
         progress = text;
-        Notify(nameof(ActionText), nameof(ActionEnabled));
+        Changed(nameof(ActionText));
+        Changed(nameof(ActionEnabled));
     }
 
-    // closing only hides to the tray (the helper keeps running); unsaved changes need a confirm, then get reverted
+    // closing only hides to the tray, the helper keeps running
     protected override void OnClosing(CancelEventArgs e)
     {
         if (Quitting) return;
         e.Cancel = true;
-        if (Dirty)
-        {
-            if (!Dialog.Ask(this, L.I["discard"])) return;
-            Load();
-        }
         Hide();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    void Changed([CallerMemberName] string name = "") => Notify(name);
-    void Notify(params string[] names)
-    {
-        foreach (var n in names) PropertyChanged?.Invoke(this, new(n));
-        if (!names.Contains(nameof(Dirty))) PropertyChanged?.Invoke(this, new(nameof(Dirty)));
-    }
+    void Changed([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new(name));
 }
