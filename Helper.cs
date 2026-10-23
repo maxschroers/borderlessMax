@@ -10,8 +10,10 @@ static class Helper
     public static Settings Settings = Settings.Load();
     public static event Action<Game?>? ActiveChanged;
     public static Game? Active { get; private set; }
-    static bool taskbarHidden;
+    static bool taskbarHidden; // or pushed behind the game: something to undo when the game loses focus
     static uint? savedTaskbarState; // auto-hide setting to restore when the taskbar comes back
+    static IntPtr marked; // game window marked full-screen for the taskbar (TaskbarMode.Behind)
+    static ITaskbarList2? taskbarList;
 
     public static void Tick()
     {
@@ -92,11 +94,24 @@ static class Helper
 
     static void HideTaskbar(IntPtr game)
     {
-        // re-checked every tick so the taskbar is hidden again if Explorer brings it back
-        var screen = MonitorFromWindow(game, MONITOR_DEFAULTTONEAREST);
-        foreach (var h in Taskbars())
-            if (IsWindowVisible(h) && (Settings.Taskbar == TaskbarScope.AllScreens || MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST) == screen))
-                ShowWindow(h, SW_HIDE);
+        if (Settings.Mode == TaskbarMode.Behind)
+        {
+            // Windows only puts the taskbar behind windows that cover the whole screen; marked ones count as such
+            if (marked != game)
+            {
+                Unmark();
+                (taskbarList ??= TaskbarList()).MarkFullscreenWindow(game, true);
+                marked = game;
+            }
+        }
+        else
+        {
+            // re-checked every tick so the taskbar is hidden again if Explorer brings it back
+            var screen = MonitorFromWindow(game, MONITOR_DEFAULTTONEAREST);
+            foreach (var h in Taskbars())
+                if (IsWindowVisible(h) && (Settings.Taskbar == TaskbarScope.AllScreens || MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST) == screen))
+                    ShowWindow(h, SW_HIDE);
+        }
 
         // a hidden taskbar still reserves its space and Windows ignores SPI_SETWORKAREA while it is an appbar;
         // auto-hide frees the space (on every monitor, it's one setting) and Windows stretches maximized windows itself
@@ -117,8 +132,16 @@ static class Helper
             TaskbarState(ABM_SETSTATE, state);
             savedTaskbarState = null;
         }
+        Unmark(); // the taskbar comes back in front of the game when it loses focus
         foreach (var h in Taskbars()) ShowWindow(h, SW_SHOW);
         taskbarHidden = false;
+    }
+
+    static void Unmark()
+    {
+        if (marked == IntPtr.Zero) return;
+        try { taskbarList?.MarkFullscreenWindow(marked, false); } catch { } // the game may be gone already
+        marked = IntPtr.Zero;
     }
 
     static uint TaskbarState(uint msg, uint state)

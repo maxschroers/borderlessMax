@@ -28,7 +28,8 @@ static class SelfTest
                 return back.ToJson() == s.ToJson() && back.Games[0] == s.Games[0] && back.Taskbar == TaskbarScope.AllScreens;
             },
             () => Settings.Parse("""{ "games": [ { "exe": "x.exe", "name": "X", "width": 1920, "height": 1080 } ], }""") is
-                { Taskbar: TaskbarScope.GameScreen, Stretch: true, Games: [{ Enabled: true, Path: null }] },
+                { Taskbar: TaskbarScope.GameScreen, Stretch: true, Mode: TaskbarMode.Behind, Games: [{ Enabled: true, Path: null }] }
+                && Settings.Parse("""{ "games": [], "mode": "Hide" }""").Mode == TaskbarMode.Hide,
             // 10: Steam library paths from libraryfolders.vdf
             () => Apps.SteamLibraries("""
                 "libraryfolders" { "0" { "path"		"C:\\Program Files (x86)\\Steam" } "1" { "path"		"D:\\SteamLibrary" } }

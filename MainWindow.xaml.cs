@@ -43,7 +43,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         L.Languages.Select(l => new LangItem(l.Key, l.Value, (ImageSource)Application.Current.FindResource("Flag_" + l.Key))).ToList();
     public string VersionText { get; } = Installer.Version == "dev" ? "dev" : "v" + Installer.Version;
 
-    int scope;
+    int scope, mode;
     bool stretch;
     bool loading = true;
     Installer.Update? update;
@@ -63,12 +63,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Default = new ResolutionChoice(w, h);
         Default.PropertyChanged += (_, _) => Persist();
         scope = (int)s.Taskbar;
+        mode = (int)s.Mode;
         stretch = s.Stretch;
         ShowAction = !Installer.Installed; // portable: offer the install
         loading = false;
     }
 
     public int ScopeIndex { get => scope; set { scope = value; Persist(); } }
+    public int ModeIndex { get => mode; set { mode = value; Persist(); Changed(nameof(Hiding)); } }
+    public bool Hiding => mode == (int)TaskbarMode.Hide;
     public bool Stretch { get => stretch; set { stretch = value; Persist(); } }
     public bool Autostart { get => Installer.Autostart; set => Installer.SetAutostart(value); }
     public bool NoGames => Rows.Count == 0;
@@ -87,7 +90,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     void Persist()
     {
         if (loading) return;
-        Helper.Settings = new Settings(Rows.Select(r => r.Game).ToList(), (TaskbarScope)scope, stretch, L.I.Lang, Default.Width, Default.Height);
+        Helper.Settings = new Settings(Rows.Select(r => r.Game).ToList(), (TaskbarScope)scope, stretch, L.I.Lang, Default.Width, Default.Height,
+            (TaskbarMode)mode);
         Helper.Settings.Save();
         Helper.ShowTaskbar(); // the next tick hides it again with the new settings
         foreach (var r in Rows) r.Refresh(); // sizes that follow the default

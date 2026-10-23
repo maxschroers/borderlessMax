@@ -9,10 +9,13 @@ public record Game(string Name, string Exe, int? Width = null, int? Height = nul
 
 public enum TaskbarScope { GameScreen, AllScreens }
 
+// Behind: the taskbar stays, the focused game is drawn in front of it; Hide: the taskbar is hidden (on Taskbar's screens)
+public enum TaskbarMode { Behind, Hide }
+
 // Stretch: taskbar auto-hide while playing, so maximized windows reach the bottom of the screen.
 // DefaultWidth / DefaultHeight 0 = 16:9 at the height of the main screen.
 public record Settings(List<Game> Games, TaskbarScope Taskbar = TaskbarScope.GameScreen, bool Stretch = true, string? Lang = null,
-    int DefaultWidth = 0, int DefaultHeight = 0)
+    int DefaultWidth = 0, int DefaultHeight = 0, TaskbarMode Mode = TaskbarMode.Behind)
 {
     // %APPDATA%, not next to the exe: survives updates and is the same for the portable and the installed copy
     public static readonly string Dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), App.Name);

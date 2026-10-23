@@ -111,11 +111,20 @@
           <Border Style="{StaticResource Card}" Margin="0,12,0,0">
             <StackPanel>
               <TextBlock Style="{StaticResource Title}" Text="{Binding [taskbar], Source={x:Static local:L.I}}" />
-              <TextBlock Style="{StaticResource Label}" Text="{Binding [hide_on], Source={x:Static local:L.I}}" />
-              <ComboBox SelectedIndex="{Binding ScopeIndex}" AutomationProperties.Name="{Binding [hide_on], Source={x:Static local:L.I}}">
-                <ComboBoxItem Content="{Binding [game_screen], Source={x:Static local:L.I}}" />
-                <ComboBoxItem Content="{Binding [all_screens], Source={x:Static local:L.I}}" />
+              <TextBlock Style="{StaticResource Label}" Text="{Binding [taskbar_mode], Source={x:Static local:L.I}}" />
+              <ComboBox SelectedIndex="{Binding ModeIndex}" AutomationProperties.Name="{Binding [taskbar_mode], Source={x:Static local:L.I}}">
+                <ComboBoxItem Content="{Binding [mode_behind], Source={x:Static local:L.I}}" />
+                <ComboBoxItem Content="{Binding [mode_hide], Source={x:Static local:L.I}}" />
               </ComboBox>
+              <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="{Binding [mode_hint], Source={x:Static local:L.I}}" />
+              <!-- only for hiding: which screens -->
+              <StackPanel Margin="0,16,0,0" Visibility="{Binding Hiding, Converter={StaticResource Vis}}">
+                <TextBlock Style="{StaticResource Label}" Text="{Binding [hide_on], Source={x:Static local:L.I}}" />
+                <ComboBox SelectedIndex="{Binding ScopeIndex}" AutomationProperties.Name="{Binding [hide_on], Source={x:Static local:L.I}}">
+                  <ComboBoxItem Content="{Binding [game_screen], Source={x:Static local:L.I}}" />
+                  <ComboBoxItem Content="{Binding [all_screens], Source={x:Static local:L.I}}" />
+                </ComboBox>
+              </StackPanel>
               <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Stretch}" Margin="0,18,0,8"
                         Content="{Binding [stretch], Source={x:Static local:L.I}}" />
               <TextBlock Style="{StaticResource Hint}" Text="{Binding [stretch_hint], Source={x:Static local:L.I}}" />

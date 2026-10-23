@@ -16,7 +16,9 @@ public class L : INotifyPropertyChanged
         {
             ["subtitle"] = "Randlos-Fenster-Helfer", ["games"] = "Spiele & Apps", ["add_game"] = "Spiel hinzufügen",
             ["no_games"] = "Noch keine Spiele. Füge eins mit dem Button unten hinzu.",
-            ["taskbar"] = "Taskleiste", ["hide_on"] = "Taskleiste ausblenden auf", ["game_screen"] = "Spiel-Bildschirm",
+            ["taskbar"] = "Taskleiste", ["hide_on"] = "Taskleiste ausblenden auf",
+            ["taskbar_mode"] = "Beim Spielen", ["mode_behind"] = "Hinter dem Spiel", ["mode_hide"] = "Ausblenden",
+            ["mode_hint"] = "Hinter dem Spiel: Die Taskleiste bleibt sichtbar, das fokussierte Spiel liegt davor. Ausblenden: Sie verschwindet, bis du rausgehst.", ["game_screen"] = "Spiel-Bildschirm",
             ["all_screens"] = "Allen Bildschirmen", ["stretch"] = "Fenster bis unten strecken",
             ["stretch_hint"] = "Schaltet beim Spielen das automatische Ausblenden der Taskleiste ein, damit maximierte Fenster bis zum Bildschirmrand reichen.",
             ["general"] = "Allgemein", ["autostart"] = "Mit Windows starten", ["autostart_hint"] = "Startet unsichtbar im Infobereich.",
@@ -43,7 +45,9 @@ public class L : INotifyPropertyChanged
         {
             ["subtitle"] = "borderless window helper", ["games"] = "Games & apps", ["add_game"] = "Add game",
             ["no_games"] = "No games yet. Add one with the button below.",
-            ["taskbar"] = "Taskbar", ["hide_on"] = "Hide taskbar on", ["game_screen"] = "Game screen",
+            ["taskbar"] = "Taskbar", ["hide_on"] = "Hide taskbar on",
+            ["taskbar_mode"] = "While playing", ["mode_behind"] = "Behind the game", ["mode_hide"] = "Hide",
+            ["mode_hint"] = "Behind the game: the taskbar stays visible, the focused game is in front of it. Hide: it disappears until you tab out.", ["game_screen"] = "Game screen",
             ["all_screens"] = "All screens", ["stretch"] = "Stretch windows to the bottom",
             ["stretch_hint"] = "Turns on taskbar auto-hide while you play, so maximized windows reach the edge of the screen.",
             ["general"] = "General", ["autostart"] = "Start with Windows", ["autostart_hint"] = "Starts hidden in the tray.",
