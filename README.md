@@ -22,10 +22,12 @@ borderlessMax runs in the tray and fixes both while a game from your list has fo
 
 - **Borderless and centered**: the game gets a borderless window of the size you set, centered on its screen. If the
   game resizes itself, it snaps back within half a second.
-- **Taskbar out of the way** while you play: only on the game's screen or on all screens. It comes back when you
-  tab out, minimize or close the game, or quit borderlessMax.
-- **Stretch windows**: optionally turns on taskbar auto-hide while you play, so maximized windows next to a centered
-  game reach the bottom of the screen. Your setting is restored afterwards.
+- **Taskbar out of the way** while you play, two ways:
+  - *Behind the game* (default): the taskbar stays visible, the focused game is drawn in front of it.
+  - *Hide*: the taskbar disappears, on the game's screen or on all screens. Optionally **stretch windows**: taskbar
+    auto-hide turns on while you play, so maximized windows next to a centered game reach the bottom of the screen.
+
+  Everything is back to normal when you tab out, minimize or close the game, or quit borderlessMax.
 - **Game picker**: lists the programs and games on this PC (Steam, Epic, Xbox, Riot, Start menu, installed apps,
   running apps) with icons and a search field (searches name, exe and store). *Browse…* adds any other exe.
 - **Default resolution** for all games, from the list your screens really support (with aspect ratio) or any custom

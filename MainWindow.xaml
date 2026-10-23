@@ -117,17 +117,17 @@
                 <ComboBoxItem Content="{Binding [mode_hide], Source={x:Static local:L.I}}" />
               </ComboBox>
               <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="{Binding [mode_hint], Source={x:Static local:L.I}}" />
-              <!-- only for hiding: which screens -->
+              <!-- only for hiding: which screens, stretching -->
               <StackPanel Margin="0,16,0,0" Visibility="{Binding Hiding, Converter={StaticResource Vis}}">
                 <TextBlock Style="{StaticResource Label}" Text="{Binding [hide_on], Source={x:Static local:L.I}}" />
                 <ComboBox SelectedIndex="{Binding ScopeIndex}" AutomationProperties.Name="{Binding [hide_on], Source={x:Static local:L.I}}">
                   <ComboBoxItem Content="{Binding [game_screen], Source={x:Static local:L.I}}" />
                   <ComboBoxItem Content="{Binding [all_screens], Source={x:Static local:L.I}}" />
                 </ComboBox>
+                <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Stretch}" Margin="0,18,0,8"
+                          Content="{Binding [stretch], Source={x:Static local:L.I}}" />
+                <TextBlock Style="{StaticResource Hint}" Text="{Binding [stretch_hint], Source={x:Static local:L.I}}" />
               </StackPanel>
-              <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Stretch}" Margin="0,18,0,8"
-                        Content="{Binding [stretch], Source={x:Static local:L.I}}" />
-              <TextBlock Style="{StaticResource Hint}" Text="{Binding [stretch_hint], Source={x:Static local:L.I}}" />
             </StackPanel>
           </Border>
           <!-- general -->

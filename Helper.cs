@@ -115,7 +115,7 @@ static class Helper
 
         // a hidden taskbar still reserves its space and Windows ignores SPI_SETWORKAREA while it is an appbar;
         // auto-hide frees the space (on every monitor, it's one setting) and Windows stretches maximized windows itself
-        if (Settings.Stretch)
+        if (Settings.Stretch && Settings.Mode == TaskbarMode.Hide) // behind the game the taskbar keeps its space
         {
             var state = TaskbarState(ABM_GETSTATE, 0);
             savedTaskbarState ??= state;
