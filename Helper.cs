@@ -29,7 +29,8 @@ static class Helper
         }
 
         SetActive(game);
-        ApplyBorderless(hwnd, game);
+        if (game.KeepFrame) PlaceAboveTaskbar(hwnd);
+        else ApplyBorderless(hwnd, game);
         HideTaskbar(hwnd);
     }
 
@@ -69,6 +70,23 @@ static class Helper
             SetWindowPos(hwnd, HWND_TOP, target.X, target.Y, target.Width, target.Height,
                 SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
     }
+
+    // frame and size stay as the game wants them; only the visible window is moved so its bottom touches the taskbar
+    static void PlaceAboveTaskbar(IntPtr hwnd)
+    {
+        if (IsZoomed(hwnd)) return;
+        GetWindowRect(hwnd, out var r);
+        if (DwmGetWindowAttribute(hwnd, DWMWA_EXTENDED_FRAME_BOUNDS, out var v, System.Runtime.InteropServices.Marshal.SizeOf<RECT>()) != 0) v = r;
+        var w = MonitorOf(hwnd).rcWork;
+        var target = AboveTaskbar(Rectangle.FromLTRB(w.Left, w.Top, w.Right, w.Bottom), Rectangle.FromLTRB(v.Left, v.Top, v.Right, v.Bottom));
+        int x = target.X + r.Left - v.Left, y = target.Y + r.Top - v.Top; // add the invisible borders back
+        if (x != r.Left || y != r.Top)
+            SetWindowPos(hwnd, IntPtr.Zero, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+    }
+
+    // centered, bottom on the work area's bottom (= top of a bottom taskbar); too tall: the title bar stays on screen
+    public static Rectangle AboveTaskbar(Rectangle work, Rectangle window) =>
+        new(work.X + (work.Width - window.Width) / 2, Math.Max(work.Top, work.Bottom - window.Height), window.Width, window.Height);
 
     static MONITORINFO MonitorOf(IntPtr hwnd)
     {

@@ -20,6 +20,7 @@ public partial class GameEditor : Window, INotifyPropertyChanged
         gameName = game.Name;
         exe = game.Exe;
         useDefault = game.Width is null;
+        keepFrame = game.KeepFrame;
         Size = new ResolutionChoice(game.Width ?? defaultSize.W, game.Height ?? defaultSize.H);
         Icon = Dialog.Icon;
         DataContext = this;
@@ -36,6 +37,9 @@ public partial class GameEditor : Window, INotifyPropertyChanged
     public string Exe { get => exe; set { exe = value; Changed(); Changed(nameof(Valid)); } }
     public bool UseDefault { get => useDefault; set { useDefault = value; Changed(); Changed(nameof(OwnSize)); } }
     public bool OwnSize => !useDefault;
+    bool keepFrame;
+    public bool KeepFrame { get => keepFrame; set { keepFrame = value; Changed(); Changed(nameof(Borderless)); } }
+    public bool Borderless => !keepFrame;
     public bool Valid => gameName.Trim() != "" && exe.Trim().EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
 
     void Save_Click(object sender, RoutedEventArgs e)
@@ -43,7 +47,7 @@ public partial class GameEditor : Window, INotifyPropertyChanged
         Result = game with
         {
             Name = gameName.Trim(), Exe = exe.Trim(),
-            Width = useDefault ? null : Size.Width, Height = useDefault ? null : Size.Height,
+            Width = useDefault ? null : Size.Width, Height = useDefault ? null : Size.Height, KeepFrame = keepFrame,
         };
         DialogResult = true;
     }

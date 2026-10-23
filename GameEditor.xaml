@@ -17,10 +17,17 @@
     <TextBox Text="{Binding Exe, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{Binding [exe], Source={x:Static local:L.I}}" />
     <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{Binding [exe_hint], Source={x:Static local:L.I}}" />
 
-    <TextBlock Style="{StaticResource Label}" Margin="0,16,0,8" Text="{Binding [resolution], Source={x:Static local:L.I}}" />
-    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding UseDefault}" Content="{Binding DefaultText}" Margin="0,0,0,12" />
-    <ContentControl Content="{Binding Size}" ContentTemplate="{StaticResource ResolutionPicker}" Focusable="False"
-                    IsEnabled="{Binding OwnSize}" />
+    <TextBlock Style="{StaticResource Label}" Margin="0,16,0,8" Text="{Binding [window], Source={x:Static local:L.I}}" />
+    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding KeepFrame}" Content="{Binding [keep_frame], Source={x:Static local:L.I}}" />
+    <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{Binding [keep_frame_hint], Source={x:Static local:L.I}}" />
+
+    <!-- borderless only: the size -->
+    <StackPanel Visibility="{Binding Borderless, Converter={StaticResource Vis}}">
+      <TextBlock Style="{StaticResource Label}" Margin="0,16,0,8" Text="{Binding [resolution], Source={x:Static local:L.I}}" />
+      <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding UseDefault}" Content="{Binding DefaultText}" Margin="0,0,0,12" />
+      <ContentControl Content="{Binding Size}" ContentTemplate="{StaticResource ResolutionPicker}" Focusable="False"
+                      IsEnabled="{Binding OwnSize}" />
+    </StackPanel>
 
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
       <Button Style="{StaticResource GreyButton}" MinHeight="38" IsCancel="True" Content="{Binding [cancel], Source={x:Static local:L.I}}" />

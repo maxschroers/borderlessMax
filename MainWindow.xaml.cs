@@ -17,9 +17,10 @@ public class GameRow(Game game) : INotifyPropertyChanged
     public ImageSource? Icon => Game.Path is null ? null : Apps.Icon(Game.Path);
     public bool Enabled { get => Game.Enabled; set => Update(Game with { Enabled = value }); }
 
-    // "2560x1440 · default" or "1920x1080 · 16:9"
-    public string Size => $"{Helper.Settings.SizeOf(Game).W}x{Helper.Settings.SizeOf(Game).H}";
-    public string SizeInfo => Game.Width is null ? L.I["default_tag"] : Displays.Aspect(Helper.Settings.SizeOf(Game).W, Helper.Settings.SizeOf(Game).H);
+    // "2560x1440 · default", "1920x1080 · 16:9" or "above the taskbar" (keep frame: the game's own size)
+    public string Size => Game.KeepFrame ? L.I["above_taskbar"] : $"{Helper.Settings.SizeOf(Game).W}x{Helper.Settings.SizeOf(Game).H}";
+    public string SizeInfo => Game.KeepFrame ? "" : Game.Width is null ? L.I["default_tag"]
+        : Displays.Aspect(Helper.Settings.SizeOf(Game).W, Helper.Settings.SizeOf(Game).H);
 
     public void Update(Game g)
     {

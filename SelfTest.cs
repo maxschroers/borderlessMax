@@ -60,7 +60,10 @@ static class SelfTest
                     && (s with { DefaultWidth = 100, DefaultHeight = 50 }).SizeOf(s.Games[0]) == (320, 200);
             },
             () => !new Settings([new("A", "a.exe")]).ToJson().Contains("Width\": null"), // unset sizes stay out of the file
-            // 20: Riot installs from the client's metadata, named after the game folder
+            // 20-21: keep-frame games: centered, bottom on the taskbar; too tall: top stays visible
+            () => Helper.AboveTaskbar(new(0, 0, 5120, 1392), new(100, 50, 2576, 1359)) == new Rectangle(1272, 33, 2576, 1359),
+            () => Helper.AboveTaskbar(new(0, 0, 5120, 1392), new(0, 0, 2560, 1500)) == new Rectangle(1280, 0, 2560, 1500),
+            // 22: Riot installs from the client's metadata, named after the game folder
             () => Apps.RiotInstallPath("product_install_full_path: \"C:/Games/Riot Games/VALORANT/live\"\nother: 1") == @"C:\Games\Riot Games\VALORANT\live"
                 && Apps.RiotName(@"C:\Games\Riot Games\VALORANT\live") == "VALORANT"
                 && Apps.RiotName(@"C:\Riot Games\Teamfight Tactics\PBE") == "Teamfight Tactics (PBE)"

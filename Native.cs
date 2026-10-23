@@ -80,4 +80,9 @@ static partial class Native
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool EnumDisplaySettings(string device, int mode, ref DEVMODE dm);
     [LibraryImport("dwmapi.dll")] public static partial int DwmSetWindowAttribute(IntPtr hWnd, int attr, ref int value, int size);
+    // DWMWA_EXTENDED_FRAME_BOUNDS: the visible frame, without the invisible resize borders GetWindowRect includes
+    public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+    [LibraryImport("dwmapi.dll")] public static partial int DwmGetWindowAttribute(IntPtr hWnd, int attr, out RECT value, int size);
+    [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool IsZoomed(IntPtr hWnd);
+    public const uint SWP_NOSIZE = 0x1, SWP_NOZORDER = 0x4;
 }
