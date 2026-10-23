@@ -1,0 +1,57 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: borderlessMax version
+      description: Shown bottom right in the app, e.g. v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows 11, Windows 10]
+    validations:
+      required: true
+  - type: input
+    id: game
+    attributes:
+      label: Game or app
+      description: Name and exe, e.g. "ELDEN RING (eldenring.exe)"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Display mode set in the game
+      options: [Windowed, Borderless / windowed fullscreen, Exclusive fullscreen, Don't know]
+    validations:
+      required: true
+  - type: input
+    id: screens
+    attributes:
+      label: Screens
+      description: Resolution of each monitor, e.g. "5120x1440 + 1920x1080"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Add the game with 2560x1440
+        2. Start the game
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs. actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots / anything else
