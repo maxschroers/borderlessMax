@@ -60,6 +60,12 @@ static class SelfTest
                     && (s with { DefaultWidth = 100, DefaultHeight = 50 }).SizeOf(s.Games[0]) == (320, 200);
             },
             () => !new Settings([new("A", "a.exe")]).ToJson().Contains("Width\": null"), // unset sizes stay out of the file
+            // 20: Riot installs from the client's metadata, named after the game folder
+            () => Apps.RiotInstallPath("product_install_full_path: \"C:/Games/Riot Games/VALORANT/live\"\nother: 1") == @"C:\Games\Riot Games\VALORANT\live"
+                && Apps.RiotName(@"C:\Games\Riot Games\VALORANT\live") == "VALORANT"
+                && Apps.RiotName(@"C:\Riot Games\Teamfight Tactics\PBE") == "Teamfight Tactics (PBE)"
+                && Apps.RiotName(@"C:\Games\Riot Games\League of Legends") == "League of Legends"
+                && !Apps.IsJunk("VALORANT-Win64-Shipping.exe"),
         };
         for (int i = 0; i < checks.Length; i++)
             if (!checks[i]()) return i + 1;

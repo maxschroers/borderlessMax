@@ -96,12 +96,29 @@ static partial class Apps
                     add(Path.GetFileName(game), exe, "Xbox");
     }
 
+    // the Riot Client notes every install in ProgramData\Riot Games\Metadata\*\*.product_settings.yaml (any folder, e.g.
+    // C:\Games\Riot Games\VALORANT\live); the default <drive>:\Riot Games folders are checked as well
     static void Riot(Action<string, string, string> add)
     {
-        foreach (var drive in FixedDrives())
-            foreach (var game in SafeDirs(Path.Combine(drive, "Riot Games")))
-                foreach (var exe in Exes(game, 3))
-                    add(Path.GetFileName(game), exe, "Riot");
+        var metadata = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Riot Games\Metadata");
+        var games = SafeDirs(metadata).SelectMany(d => SafeFiles(d, "*.product_settings.yaml"))
+            .Select(f => RiotInstallPath(File.ReadAllText(f))).OfType<string>()
+            .Concat(FixedDrives().SelectMany(d => SafeDirs(Path.Combine(d, "Riot Games"))));
+        foreach (var game in games)
+            foreach (var exe in Exes(game, 4)) // VALORANT: live\ShooterGame\Binaries\Win64\VALORANT-Win64-Shipping.exe
+                add(RiotName(game), exe, "Riot");
+    }
+
+    public static string? RiotInstallPath(string yaml) =>
+        Regex.Match(yaml, "product_install_full_path:\\s*\"(.+?)\"") is { Success: true } m ? Path.GetFullPath(m.Groups[1].Value) : null;
+
+    // "...\VALORANT\live" -> "VALORANT", "...\Teamfight Tactics\Live" -> "Teamfight Tactics"
+    public static string RiotName(string dir)
+    {
+        var name = Path.GetFileName(dir.TrimEnd('\\', '/'));
+        return name.Equals("live", StringComparison.OrdinalIgnoreCase) || name.Equals("pbe", StringComparison.OrdinalIgnoreCase)
+            ? $"{Path.GetFileName(Path.GetDirectoryName(dir.TrimEnd('\\', '/')))}{(name.Equals("pbe", StringComparison.OrdinalIgnoreCase) ? " (PBE)" : "")}"
+            : name;
     }
 
     static void StartMenu(Action<string, string, string> add)
