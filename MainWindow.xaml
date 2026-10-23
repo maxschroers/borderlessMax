@@ -70,13 +70,13 @@
 
     <Grid Grid.Row="1" Margin="0,12,0,0">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="2*" />
-        <ColumnDefinition Width="12" />
         <ColumnDefinition Width="*" MinWidth="300" />
+        <ColumnDefinition Width="12" />
+        <ColumnDefinition Width="2*" />
       </Grid.ColumnDefinitions>
 
-      <!-- games -->
-      <Border Style="{StaticResource Card}">
+      <!-- games, right -->
+      <Border Grid.Column="2" Style="{StaticResource Card}">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Style="{StaticResource Title}" Text="{Binding [games], Source={x:Static local:L.I}}" />
           <Button DockPanel.Dock="Bottom" Style="{StaticResource GreyButton}" HorizontalAlignment="Left" MinHeight="38" Margin="0,4,0,0"
@@ -96,7 +96,8 @@
         </DockPanel>
       </Border>
 
-      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+      <!-- settings, left -->
+      <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
         <StackPanel>
           <!-- default resolution for every game without its own -->
           <Border Style="{StaticResource Card}">
