@@ -10,6 +10,29 @@ namespace BorderlessMax;
 
 public record LangItem(string Code, string Name, ImageSource Flag);
 
+// A path that doesn't fit is cut at the start ("…\Game\League of Legends.exe"): the end is what tells files apart.
+public class PathBlock : Decorator
+{
+    public static readonly DependencyProperty PathProperty = DependencyProperty.Register(nameof(Path), typeof(string), typeof(PathBlock),
+        new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsMeasure));
+    public string Path { get => (string)GetValue(PathProperty); set => SetValue(PathProperty, value); }
+    readonly TextBlock text = new();
+
+    public PathBlock() => Child = text;
+
+    protected override Size MeasureOverride(Size available)
+    {
+        var s = Path;
+        for (int i = 1; i < Path.Length && WidthOf(s) > available.Width; i++) s = "…" + Path[i..];
+        text.Text = s;
+        return base.MeasureOverride(available);
+    }
+
+    double WidthOf(string s) => new FormattedText(s, System.Globalization.CultureInfo.CurrentCulture, FlowDirection,
+        new Typeface(text.FontFamily, text.FontStyle, text.FontWeight, text.FontStretch), text.FontSize, Brushes.White,
+        VisualTreeHelper.GetDpi(this).PixelsPerDip).WidthIncludingTrailingWhitespace;
+}
+
 // One game in the list and its settings on the right; every valid change is saved right away, an invalid
 // name or exe only marks its field red (the setter throws, the binding shows it).
 public class GameRow : INotifyPropertyChanged
@@ -26,6 +49,8 @@ public class GameRow : INotifyPropertyChanged
     public ImageSource? Icon => (Game.Icon ?? Game.Path) is string file ? Apps.Icon(file) : null;
     public string PathText => Game.Path ?? L.I["path_unknown"];
     public string IconText => Game.Icon ?? Game.Path ?? L.I["path_unknown"];
+    public bool HasPath => Game.Path is not null;
+    public bool HasIcon => (Game.Icon ?? Game.Path) is not null;
     public bool Enabled { get => Game.Enabled; set => Update(Game with { Enabled = value }); }
 
     public string Name
@@ -65,7 +90,14 @@ public class GameRow : INotifyPropertyChanged
         Edited?.Invoke();
     }
 
-    public void Refresh() => PropertyChanged?.Invoke(this, new("")); // "" = every property
+    // changed outside the window (Helper learned its file): already saved
+    public void Replace(Game g)
+    {
+        Game = g;
+        Refresh();
+    }
+
+    public void Refresh() =>PropertyChanged?.Invoke(this, new("")); // "" = every property
 
     public event Action? Edited;
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -94,6 +126,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         DataContext = this;
         SourceInitialized += (_, _) => Dialog.DarkTitleBar(this);
         Rows.CollectionChanged += (_, _) => Changed(nameof(NoGames));
+        Helper.GameLearned += (old, learned) => Rows.FirstOrDefault(r => r.Game == old)?.Replace(learned);
 
         var s = Helper.Settings;
         foreach (var g in s.Games) AddRow(g);
@@ -182,8 +215,12 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (picker.ShowDialog() != true || picker.Picked is not AppEntry app) return;
         // already in the list: just show it
         Selected = Rows.FirstOrDefault(r => r.Exe.Equals(app.Exe, StringComparison.OrdinalIgnoreCase) && r.Game.Title == app.Title);
-        if (Selected is not null) return;
-        AddRow(new Game(app.Name, app.Exe, Path: app.Path == "" ? null : app.Path, Title: app.Title)); // follows the default size until edited
+        if (Selected is not null)
+        {
+            if (Selected.Game.Path is null && app.Path != "") Selected.Update(Selected.Game with { Path = app.Path }); // its file was unknown
+            return;
+        }
+        AddRow(new Game(app.Name, app.Exe, Path: app.Path == "" ? null : app.Path, Title: app.Title, Icon: app.IconPath)); // follows the default size until edited
         Selected = Rows[^1];
         Persist();
     }
@@ -197,6 +234,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     void Details_Click(object sender, RoutedEventArgs e) => ShowDetails = !ShowDetails;
+    void Copy_Click(object sender, RoutedEventArgs e)
+    {
+        try { Clipboard.SetText((string)((Button)sender).Tag); }
+        catch (System.Runtime.InteropServices.COMException) { } // clipboard held by another app: the click just does nothing
+    }
 
     void Remove_Click(object sender, RoutedEventArgs e)
     {

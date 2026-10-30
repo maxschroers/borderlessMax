@@ -28,6 +28,7 @@ static class Helper
             return;
         }
 
+        if (game != Active && game.Path is null) Learn(game, hwnd);
         SetActive(game);
         ApplyBorderless(hwnd, game);
         HideTaskbar(hwnd);
@@ -38,6 +39,21 @@ static class Helper
         if (game == Active) return;
         Active = game;
         ActiveChanged?.Invoke(game);
+    }
+
+    // a game without its file (Minecraft Java runs as whichever javaw.exe its launcher ships) learns it when it has focus
+    public static event Action<Game, Game>? GameLearned;
+    static void Learn(Game game, IntPtr hwnd)
+    {
+        GetWindowThreadProcessId(hwnd, out uint pid);
+        string? file;
+        try { using var p = Process.GetProcessById((int)pid); file = p.MainModule?.FileName; }
+        catch { return; } // elevated game: stays unknown
+        if (file is null) return;
+        var learned = game with { Path = file };
+        Settings = Settings with { Games = Settings.Games.Select(g => g == game ? learned : g).ToList() };
+        Settings.Save();
+        GameLearned?.Invoke(game, learned);
     }
 
     static string? ExeName(IntPtr hwnd)

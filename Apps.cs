@@ -9,13 +9,15 @@ using Microsoft.Win32;
 
 namespace BorderlessMax;
 
-// Exe and Title differ from Path only for games that share their exe (Minecraft Java: javaw.exe, Path is the launcher)
+// Exe, Title and IconPath differ from Path only for games that share their exe (Minecraft Java: javaw.exe, Path is its
+// game folder, the icon comes from the launcher)
 public record AppEntry(string Name, string Path, string Source)
 {
     public string Exe { get; init; } = System.IO.Path.GetFileName(Path);
     public string? Title { get; init; }
+    public string? IconPath { get; init; }
     public string Detail => $"{Source} · {Exe}";
-    public ImageSource? Icon => Apps.Icon(Path);
+    public ImageSource? Icon => Apps.Icon(IconPath ?? Path);
 }
 
 // Finds the programs and games on this PC for the picker: running apps, game launchers, Start menu, installed apps.
@@ -125,7 +127,8 @@ static partial class Apps
     }
 
     // every launcher (official, Prism, Modrinth, CurseForge) starts the game as javaw.exe with a "Minecraft* 1.21.4 - ..." window;
-    // offered when one of their data folders exists, with the official launcher's icon if it is installed
+    // offered when one of their data folders exists, with the official launcher's icon if it is installed; its file (the launcher's
+    // javaw.exe) is learned when it runs
     static AppEntry? MinecraftJava()
     {
         string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -135,7 +138,9 @@ static partial class Apps
         var launcher = FixedDrives().Select(d => Path.Combine(d, @"XboxGames\Minecraft Launcher\Content\Minecraft.exe"))
             .Append(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Minecraft Launcher\MinecraftLauncher.exe"))
             .FirstOrDefault(File.Exists);
-        return new("Minecraft: Java Edition", launcher ?? "", "Minecraft") { Exe = "javaw.exe", Title = "Minecraft" };
+        // the Xbox launcher's exe has no icon of its own, its logo lies next to it
+        var logo = launcher is null ? null : Path.Combine(Path.GetDirectoryName(launcher)!, "SmallLogo.png");
+        return new("Minecraft: Java Edition", "", "Minecraft") { Exe = "javaw.exe", Title = "Minecraft", IconPath = File.Exists(logo) ? logo : launcher };
     }
 
     static void StartMenu(Action<string, string, string> add)

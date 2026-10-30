@@ -84,6 +84,12 @@ static class SelfTest
                 try { return Apps.Icon(png) is System.Windows.Media.Imaging.BitmapSource { PixelWidth: 64 }; }
                 finally { System.IO.File.Delete(png); }
             },
+            // 24: an icon stored as Path (up to v0.4.0) moves to Icon, a folder Path goes; an exe Path stays
+            () => Settings.Parse("""
+                    { "games": [ { "exe": "javaw.exe", "name": "M", "path": "C:\\mc\\icon.png" }, { "exe": "x.exe", "name": "X", "path": "C:\\x\\x.exe" },
+                      { "exe": "javaw.exe", "name": "F", "path": "C:\\Windows", "icon": "C:\\l\\logo.png" } ] }
+                    """).Games
+                is [{ Path: null, Icon: @"C:\mc\icon.png" }, { Path: @"C:\x\x.exe", Icon: null }, { Path: null, Icon: @"C:\l\logo.png" }],
         };
         for (int i = 0; i < checks.Length; i++)
             if (!checks[i]()) return i + 1;

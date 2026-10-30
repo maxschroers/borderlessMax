@@ -59,7 +59,19 @@ public record Settings(List<Game> Games, TaskbarScope Taskbar = TaskbarScope.Gam
         }
     }
 
-    public static Settings Parse(string json) => JsonSerializer.Deserialize<Settings>(json, Json) ?? new([]);
+    public static Settings Parse(string json)
+    {
+        var s = JsonSerializer.Deserialize<Settings>(json, Json) ?? new([]);
+        // up to v0.4.0 a picked icon replaced Path: an image there is the icon, the game's file is unknown; a folder (Minecraft
+        // Java's data folder for a while) is no file either, the game learns its file when it runs (Helper.Learn)
+        return s with
+        {
+            Games = s.Games.Select(g => g.Path is not string p ? g
+                : g.Icon is null && Apps.ImageTypes.Contains(Path.GetExtension(p).ToLowerInvariant()) ? g with { Path = null, Icon = p }
+                : Directory.Exists(p) ? g with { Path = null }
+                : g).ToList(),
+        };
+    }
     public string ToJson() => JsonSerializer.Serialize(this, Json);
 
     public void Save()
