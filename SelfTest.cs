@@ -69,6 +69,16 @@ static class SelfTest
                 && Apps.RiotName(@"C:\Riot Games\Teamfight Tactics\PBE") == "Teamfight Tactics (PBE)"
                 && Apps.RiotName(@"C:\Games\Riot Games\League of Legends") == "League of Legends"
                 && !Apps.IsJunk("VALORANT-Win64-Shipping.exe"),
+            // 23-24: games sharing an exe (Minecraft Java) match by title too; the title survives a save / load
+            () =>
+            {
+                Game mc = new("Minecraft", "javaw.exe", Title: "Minecraft"), plain = new("X", "x.exe");
+                return Helper.Matches(mc, "JAVAW.exe", () => "Minecraft* 1.21.4 - Singleplayer")
+                    && !Helper.Matches(mc, "javaw.exe", () => "Some Java Tool") && !Helper.Matches(mc, "java.exe", () => "Minecraft 1.21.4")
+                    && Helper.Matches(plain, "x.exe", () => throw new InvalidOperationException("title read without need"));
+            },
+            () => Settings.Parse(new Settings([new("Minecraft", "javaw.exe", Title: "Minecraft")]).ToJson()).Games[0].Title == "Minecraft"
+                && !new Settings([new("A", "a.exe")]).ToJson().Contains("Title"),
         };
         for (int i = 0; i < checks.Length; i++)
             if (!checks[i]()) return i + 1;

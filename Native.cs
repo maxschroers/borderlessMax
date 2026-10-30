@@ -62,6 +62,8 @@ static partial class Native
 
     [LibraryImport("user32.dll")] public static partial IntPtr GetForegroundWindow();
     [LibraryImport("user32.dll")] public static partial uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+    [LibraryImport("user32.dll", EntryPoint = "GetWindowTextW", StringMarshalling = StringMarshalling.Utf16)]
+    public static partial int GetWindowText(IntPtr hWnd, [Out] char[] text, int max);
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool IsIconic(IntPtr hWnd);
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool IsWindowVisible(IntPtr hWnd);
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool ShowWindow(IntPtr hWnd, int cmd);

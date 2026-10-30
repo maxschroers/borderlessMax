@@ -9,9 +9,11 @@ using Microsoft.Win32;
 
 namespace BorderlessMax;
 
+// Exe and Title differ from Path only for games that share their exe (Minecraft Java: javaw.exe, Path is the launcher)
 public record AppEntry(string Name, string Path, string Source)
 {
-    public string Exe => System.IO.Path.GetFileName(Path);
+    public string Exe { get; init; } = System.IO.Path.GetFileName(Path);
+    public string? Title { get; init; }
     public string Detail => $"{Source} · {Exe}";
     public ImageSource? Icon => Apps.Icon(Path);
 }
@@ -40,6 +42,7 @@ static partial class Apps
         // each source on its own: a missing launcher or an unreadable folder must not hide the rest
         foreach (var source in new Action<Action<string, string, string>>[] { Running, Steam, Epic, Xbox, Riot, StartMenu, Installed })
             try { source(Add); } catch { }
+        try { if (MinecraftJava() is { } mc) found["minecraft-java"] = mc; } catch { }
         return found.Values.OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
@@ -119,6 +122,20 @@ static partial class Apps
         return name.Equals("live", StringComparison.OrdinalIgnoreCase) || name.Equals("pbe", StringComparison.OrdinalIgnoreCase)
             ? $"{Path.GetFileName(Path.GetDirectoryName(dir.TrimEnd('\\', '/')))}{(name.Equals("pbe", StringComparison.OrdinalIgnoreCase) ? " (PBE)" : "")}"
             : name;
+    }
+
+    // every launcher (official, Prism, Modrinth, CurseForge) starts the game as javaw.exe with a "Minecraft* 1.21.4 - ..." window;
+    // offered when one of their data folders exists, with the official launcher's icon if it is installed
+    static AppEntry? MinecraftJava()
+    {
+        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!new[] { Path.Combine(appData, ".minecraft"), Path.Combine(appData, "PrismLauncher"), Path.Combine(appData, "ModrinthApp"),
+                Path.Combine(home, "curseforge", "minecraft") }.Any(Directory.Exists)) return null;
+        var launcher = FixedDrives().Select(d => Path.Combine(d, @"XboxGames\Minecraft Launcher\Content\Minecraft.exe"))
+            .Append(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Minecraft Launcher\MinecraftLauncher.exe"))
+            .FirstOrDefault(File.Exists);
+        return new("Minecraft: Java Edition", launcher ?? "", "Minecraft") { Exe = "javaw.exe", Title = "Minecraft" };
     }
 
     static void StartMenu(Action<string, string, string> add)

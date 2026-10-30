@@ -19,7 +19,7 @@ static class Helper
     {
         var hwnd = GetForegroundWindow();
         var exe = ExeName(hwnd);
-        var game = exe is null ? null : Settings.Games.FirstOrDefault(g => g.Enabled && g.Exe.Equals(exe, StringComparison.OrdinalIgnoreCase));
+        var game = exe is null ? null : Settings.Games.FirstOrDefault(g => g.Enabled && Matches(g, exe, () => WindowTitle(hwnd)));
         if (game is null || IsIconic(hwnd))
         {
             // tabbed out, minimized or closed
@@ -47,6 +47,16 @@ static class Helper
         GetWindowThreadProcessId(hwnd, out uint pid);
         try { using var p = Process.GetProcessById((int)pid); return p.ProcessName + ".exe"; }
         catch { return null; }
+    }
+
+    // the title is only read for games that need it
+    public static bool Matches(Game g, string exe, Func<string> title) =>
+        g.Exe.Equals(exe, StringComparison.OrdinalIgnoreCase) && (g.Title is null || title().StartsWith(g.Title, StringComparison.OrdinalIgnoreCase));
+
+    static string WindowTitle(IntPtr hwnd)
+    {
+        var buffer = new char[256];
+        return new string(buffer, 0, GetWindowText(hwnd, buffer, buffer.Length));
     }
 
     static void ApplyBorderless(IntPtr hwnd, Game game)

@@ -28,8 +28,11 @@ borderlessMax runs in the tray and fixes both while a game from your list has fo
     auto-hide turns on while you play, so maximized windows next to a centered game reach the bottom of the screen.
 
   Everything is back to normal when you tab out, minimize or close the game, or quit borderlessMax.
-- **Game picker**: lists the programs and games on this PC (Steam, Epic, Xbox, Riot, Start menu, installed apps,
-  running apps) with icons and a search field (searches name, exe and store). *Browse…* adds any other exe.
+- **Game picker**: lists the programs and games on this PC (Steam, Epic, Xbox, Riot, Minecraft, Start menu, installed
+  apps, running apps) with icons and a search field (searches name, exe and store). *Browse…* adds any other exe.
+- **Minecraft**: *Minecraft: Java Edition* works with every launcher (official, Prism, Modrinth, CurseForge); its
+  `javaw.exe` is only touched while the window title starts with "Minecraft", other Java apps are left alone. Bedrock
+  is *Minecraft for Windows* (Xbox).
 - **Default resolution** for all games, from the list your screens really support (with aspect ratio) or any custom
   size. A game that needs its own: the ✎ button in its row opens its settings (name, exe, resolution).
 - **Saves as you go**: every change is stored right away, no save button.
@@ -92,6 +95,7 @@ Bug reports, ideas and pull requests are welcome, see [CONTRIBUTING.md](CONTRIBU
 | Game stays fullscreen / black screen | Exclusive fullscreen isn't supported. Set the game to windowed or borderless. |
 | The game wasn't found in the picker | Use *Browse…* and pick its exe. For launcher games, pick the game's exe, not the launcher's (e.g. `...-Win64-Shipping.exe` for Unreal games). |
 | Taskbar stays hidden after borderlessMax was killed (e.g. Task Manager) | Start borderlessMax again and quit it from the tray, or restart Explorer and turn off auto-hide in the taskbar settings. |
+| Minecraft Java isn't picked up | Turn off in-game fullscreen (F11). A modpack that renames the window: set `"title"` of the game in `settings.json` to the start of its window title. |
 | Other screens' taskbars hide themselves while playing | That's *Stretch windows*: auto-hide is one setting for all screens. Turn it off if you don't need it. |
 
 ## License

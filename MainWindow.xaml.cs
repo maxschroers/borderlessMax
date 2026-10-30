@@ -109,8 +109,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var picker = new AppPicker { Owner = this };
         if (picker.ShowDialog() != true || picker.Picked is not AppEntry app) return;
-        if (Rows.Any(r => r.Exe.Equals(app.Exe, StringComparison.OrdinalIgnoreCase))) return;
-        AddRow(new Game(app.Name, app.Exe, Path: app.Path)); // follows the default size until edited
+        if (Rows.Any(r => r.Exe.Equals(app.Exe, StringComparison.OrdinalIgnoreCase) && r.Game.Title == app.Title)) return;
+        AddRow(new Game(app.Name, app.Exe, Path: app.Path == "" ? null : app.Path, Title: app.Title)); // follows the default size until edited
         Persist();
     }
 
