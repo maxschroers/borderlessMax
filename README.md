@@ -34,12 +34,14 @@ borderlessMax runs in the tray and fixes both while a game from your list has fo
   `javaw.exe` is only touched while the window title starts with "Minecraft", other Java apps are left alone. Bedrock
   is *Minecraft for Windows* (Xbox).
 - **Default resolution** for all games, from the list your screens really support (with aspect ratio) or any custom
-  size. A game that needs its own: the ✎ button in its row opens its settings (name, exe, resolution).
+  size.
+- **Layout like the NVIDIA app**: an icon rail with *Games* and *Settings*. Games shows the list on the left and the
+  selected game's settings on the right (name, exe, own resolution, icon: any image or exe, on / off, remove).
 - **Saves as you go**: every change is stored right away, no save button.
 - **Discord look**, the same dark theme as [captureMax](https://github.com/maxschroers/captureMax): dark panels,
   blurple switches and buttons, a dark title bar.
 - **Installs per user** without admin, starts with Windows if you want, **updates itself** from GitHub releases.
-- **German and English UI**: follows the system language, switchable in the header.
+- **German and English UI**: follows the system language, switchable under *Settings*.
 - One exe with .NET inside: nothing else to install.
 
 ## Download
@@ -53,7 +55,7 @@ entry, updates itself and can be removed under *Settings → Apps*.
 
 1. Set the game itself to **windowed** or **borderless** mode at the resolution you want.
 2. In borderlessMax set the **default resolution**, click **Add game** and pick the game (or *Browse…* to its exe).
-   For a different size, click ✎ in the game's row.
+   For a different size, select the game and turn off *Use default resolution*.
 3. Start the game: it gets centered and borderless, the taskbar disappears.
 
 Closing the window keeps borderlessMax running in the tray (click the tray icon to open it again, right-click to quit;

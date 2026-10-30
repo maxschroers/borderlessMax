@@ -60,16 +60,13 @@ static class SelfTest
                     && (s with { DefaultWidth = 100, DefaultHeight = 50 }).SizeOf(s.Games[0]) == (320, 200);
             },
             () => !new Settings([new("A", "a.exe")]).ToJson().Contains("Width\": null"), // unset sizes stay out of the file
-            // 20-21: keep-frame games: centered, bottom on the taskbar; too tall: top stays visible
-            () => Helper.AboveTaskbar(new(0, 0, 5120, 1392), new(100, 50, 2576, 1359)) == new Rectangle(1272, 33, 2576, 1359),
-            () => Helper.AboveTaskbar(new(0, 0, 5120, 1392), new(0, 0, 2560, 1500)) == new Rectangle(1280, 0, 2560, 1500),
-            // 22: Riot installs from the client's metadata, named after the game folder
+            // 20: Riot installs from the client's metadata, named after the game folder
             () => Apps.RiotInstallPath("product_install_full_path: \"C:/Games/Riot Games/VALORANT/live\"\nother: 1") == @"C:\Games\Riot Games\VALORANT\live"
                 && Apps.RiotName(@"C:\Games\Riot Games\VALORANT\live") == "VALORANT"
                 && Apps.RiotName(@"C:\Riot Games\Teamfight Tactics\PBE") == "Teamfight Tactics (PBE)"
                 && Apps.RiotName(@"C:\Games\Riot Games\League of Legends") == "League of Legends"
                 && !Apps.IsJunk("VALORANT-Win64-Shipping.exe"),
-            // 23-24: games sharing an exe (Minecraft Java) match by title too; the title survives a save / load
+            // 21-22: games sharing an exe (Minecraft Java) match by title too; the title survives a save / load
             () =>
             {
                 Game mc = new("Minecraft", "javaw.exe", Title: "Minecraft"), plain = new("X", "x.exe");
@@ -79,6 +76,14 @@ static class SelfTest
             },
             () => Settings.Parse(new Settings([new("Minecraft", "javaw.exe", Title: "Minecraft")]).ToJson()).Games[0].Title == "Minecraft"
                 && !new Settings([new("A", "a.exe")]).ToJson().Contains("Title"),
+            // 23: a picked image is the icon as it is
+            () =>
+            {
+                var png = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"borderlessMax-{Guid.NewGuid()}.png");
+                using (var b = new Bitmap(16, 16)) b.Save(png);
+                try { return Apps.Icon(png) is System.Windows.Media.Imaging.BitmapSource { PixelWidth: 64 }; }
+                finally { System.IO.File.Delete(png); }
+            },
         };
         for (int i = 0; i < checks.Length; i++)
             if (!checks[i]()) return i + 1;

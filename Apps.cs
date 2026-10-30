@@ -194,12 +194,25 @@ static partial class Apps
     }
 
     static readonly Dictionary<string, ImageSource?> icons = new(StringComparer.OrdinalIgnoreCase);
+    public static readonly string[] ImageTypes = [".png", ".jpg", ".jpeg", ".ico", ".bmp", ".gif"];
 
+    // an image file as it is, anything else (exe) by its associated icon
     public static ImageSource? Icon(string path)
     {
         if (icons.TryGetValue(path, out var cached)) return cached;
         try
         {
+            if (ImageTypes.Contains(Path.GetExtension(path).ToLowerInvariant()))
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.UriSource = new Uri(path);
+                bmp.DecodePixelWidth = 64; // shown at 32 px, sharp on 200 % scaling
+                bmp.CacheOption = BitmapCacheOption.OnLoad; // file not kept open
+                bmp.EndInit();
+                bmp.Freeze();
+                return icons[path] = bmp;
+            }
             using var ic = System.Drawing.Icon.ExtractAssociatedIcon(path)!;
             var img = Imaging.CreateBitmapSourceFromHIcon(ic.Handle, System.Windows.Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             img.Freeze();

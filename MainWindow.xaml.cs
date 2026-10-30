@@ -9,18 +9,51 @@ namespace BorderlessMax;
 
 public record LangItem(string Code, string Name, ImageSource Flag);
 
-public class GameRow(Game game) : INotifyPropertyChanged
+// One game in the list and its settings on the right; every valid change is saved right away, an invalid
+// name or exe only marks its field red (the setter throws, the binding shows it).
+public class GameRow : INotifyPropertyChanged
 {
-    public Game Game { get; private set; } = game;
-    public string Name => Game.Name;
-    public string Exe => Game.Exe;
+    public GameRow(Game game)
+    {
+        Game = game;
+        var (w, h) = Helper.Settings.SizeOf(game);
+        Choice = new ResolutionChoice(w, h);
+        Choice.PropertyChanged += (_, _) => { if (!UseDefault) Update(Game with { Width = Choice.Width, Height = Choice.Height }); };
+    }
+
+    public Game Game { get; private set; }
     public ImageSource? Icon => Game.Path is null ? null : Apps.Icon(Game.Path);
     public bool Enabled { get => Game.Enabled; set => Update(Game with { Enabled = value }); }
 
-    // "2560x1440 · default", "1920x1080 · 16:9" or "above the taskbar" (keep frame: the game's own size)
-    public string Size => Game.KeepFrame ? L.I["above_taskbar"] : $"{Helper.Settings.SizeOf(Game).W}x{Helper.Settings.SizeOf(Game).H}";
-    public string SizeInfo => Game.KeepFrame ? "" : Game.Width is null ? L.I["default_tag"]
-        : Displays.Aspect(Helper.Settings.SizeOf(Game).W, Helper.Settings.SizeOf(Game).H);
+    public string Name
+    {
+        get => Game.Name;
+        set => Update(Game with { Name = string.IsNullOrWhiteSpace(value) ? throw new ArgumentException("empty") : value });
+    }
+
+    public string Exe
+    {
+        get => Game.Exe;
+        set => Update(Game with { Exe = value.Trim().EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? value.Trim() : throw new ArgumentException("no exe") });
+    }
+
+    // own size: starts at the current default, then follows the picker
+    public ResolutionChoice Choice { get; }
+    public bool UseDefault
+    {
+        get => Game.Width is null;
+        set
+        {
+            if (!value) (Choice.Width, Choice.Height) = Helper.Settings.DefaultSize;
+            Update(value ? Game with { Width = null, Height = null } : Game with { Width = Choice.Width, Height = Choice.Height });
+        }
+    }
+    public bool OwnSize => !UseDefault;
+    public string DefaultText => L.I.Format("use_default", Helper.Settings.DefaultSize.W, Helper.Settings.DefaultSize.H);
+
+    // "2560x1440 · default" or "1920x1080 · 16:9"
+    public string SizeText => $"{Helper.Settings.SizeOf(Game).W}x{Helper.Settings.SizeOf(Game).H}";
+    public string SizeInfo => Game.Width is null ? L.I["default_tag"] : Displays.Aspect(Helper.Settings.SizeOf(Game).W, Helper.Settings.SizeOf(Game).H);
 
     public void Update(Game g)
     {
@@ -63,6 +96,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var (w, h) = s.DefaultSize;
         Default = new ResolutionChoice(w, h);
         Default.PropertyChanged += (_, _) => Persist();
+        Selected = Rows.FirstOrDefault();
         scope = (int)s.Taskbar;
         mode = (int)s.Mode;
         stretch = s.Stretch;
@@ -76,6 +110,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public bool Stretch { get => stretch; set { stretch = value; Persist(); } }
     public bool Autostart { get => Installer.Autostart; set => Installer.SetAutostart(value); }
     public bool NoGames => Rows.Count == 0;
+    public GameRow? Selected { get; set { field = value; Changed(); Changed(nameof(HasSelection)); } }
+    public bool HasSelection => Selected is not null;
 
     public string Lang
     {
@@ -109,21 +145,28 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         var picker = new AppPicker { Owner = this };
         if (picker.ShowDialog() != true || picker.Picked is not AppEntry app) return;
-        if (Rows.Any(r => r.Exe.Equals(app.Exe, StringComparison.OrdinalIgnoreCase) && r.Game.Title == app.Title)) return;
+        // already in the list: just show it
+        Selected = Rows.FirstOrDefault(r => r.Exe.Equals(app.Exe, StringComparison.OrdinalIgnoreCase) && r.Game.Title == app.Title);
+        if (Selected is not null) return;
         AddRow(new Game(app.Name, app.Exe, Path: app.Path == "" ? null : app.Path, Title: app.Title)); // follows the default size until edited
+        Selected = Rows[^1];
         Persist();
     }
 
-    void Edit_Click(object sender, RoutedEventArgs e)
+    // any image or exe; stored as the game's Path, which only gives it its icon
+    void Icon_Click(object sender, RoutedEventArgs e)
     {
-        var row = (GameRow)((Button)sender).DataContext;
-        var editor = new GameEditor(row.Game, Helper.Settings.DefaultSize) { Owner = this };
-        if (editor.ShowDialog() == true) row.Update(editor.Result!);
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = $"{L.I["icons"]}|{string.Join(";", Apps.ImageTypes.Select(t => "*" + t))};*.exe" };
+        if (Selected is null || dialog.ShowDialog(this) != true) return;
+        Selected.Update(Selected.Game with { Path = dialog.FileName });
     }
 
     void Remove_Click(object sender, RoutedEventArgs e)
     {
-        Rows.Remove((GameRow)((Button)sender).DataContext);
+        if (Selected is null) return;
+        var i = Rows.IndexOf(Selected);
+        Rows.Remove(Selected);
+        Selected = Rows.Count == 0 ? null : Rows[Math.Min(i, Rows.Count - 1)]; // the next one, or the last
         Persist();
     }
 

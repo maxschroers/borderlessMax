@@ -4,11 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace BorderlessMax;
 
-// Exe is matched against the process name; Path only gives the list its icon; no Width / Height = the default size.
-// KeepFrame: for games that won't go borderless (VALORANT): window untouched, only moved centered above the taskbar.
+// Exe is matched against the process name; Path only gives the list its icon (the game's exe or a picked image); no Width / Height = the default size.
 // Title: the window title must start with it, for games that share their exe (Minecraft Java: javaw.exe).
 public record Game(string Name, string Exe, int? Width = null, int? Height = null, bool Enabled = true, string? Path = null,
-    bool KeepFrame = false, string? Title = null);
+    string? Title = null);
 
 public enum TaskbarScope { GameScreen, AllScreens }
 

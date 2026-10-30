@@ -28,7 +28,10 @@
   <SolidColorBrush x:Key="RowHover" Color="#35353b" />
   <SolidColorBrush x:Key="RowSelected" Color="#3e3e44" />
   <SolidColorBrush x:Key="RowText" Color="#abacb2" />
+  <SolidColorBrush x:Key="Rail" Color="#141417" />
   <FontFamily x:Key="Font">Segoe UI Variable Text, Segoe UI</FontFamily>
+  <!-- Windows' own icon fonts: Fluent on 11, MDL2 on 10 (same code points) -->
+  <FontFamily x:Key="Glyphs">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
   <BooleanToVisibilityConverter x:Key="Vis" />
 
   <!-- chevron like captureMax's assets/chevron.svg -->
@@ -313,6 +316,42 @@
               </Trigger.ExitActions>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.5" /></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <!-- page in the left rail: icon (Tag, a Glyphs code point) over a small label, accent bar when chosen -->
+  <Style x:Key="Nav" TargetType="RadioButton">
+    <Setter Property="Foreground" Value="{StaticResource Muted}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="RadioButton">
+          <Grid Background="Transparent">
+            <Border x:Name="bd" CornerRadius="8" Margin="6,0" Background="Transparent">
+              <StackPanel Margin="0,10">
+                <TextBlock Text="{TemplateBinding Tag}" FontFamily="{StaticResource Glyphs}" FontSize="20" FontWeight="Normal" HorizontalAlignment="Center" />
+                <ContentPresenter HorizontalAlignment="Center" Margin="0,6,0,0" />
+              </StackPanel>
+            </Border>
+            <Border x:Name="bar" Width="3" HorizontalAlignment="Left" Margin="0,12" CornerRadius="0,2,2,0"
+                    Background="{StaticResource Accent}" Visibility="Hidden" />
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="bd" Property="Background" Value="{StaticResource RowHover}" />
+              <Setter Property="Foreground" Value="{StaticResource Text}" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="bd" Property="Background" Value="{StaticResource RowSelected}" />
+              <Setter TargetName="bar" Property="Visibility" Value="Visible" />
+              <Setter Property="Foreground" Value="White" />
+            </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
