@@ -4,10 +4,11 @@ using System.Text.Json.Serialization;
 
 namespace BorderlessMax;
 
-// Exe is matched against the process name; Path only gives the list its icon (the game's exe or a picked image); no Width / Height = the default size.
+// Exe is matched against the process name; Path is the game's file, shown in its details and its icon unless Icon (a picked
+// image or exe) is set; no Width / Height = the default size.
 // Title: the window title must start with it, for games that share their exe (Minecraft Java: javaw.exe).
 public record Game(string Name, string Exe, int? Width = null, int? Height = null, bool Enabled = true, string? Path = null,
-    string? Title = null);
+    string? Title = null, string? Icon = null);
 
 public enum TaskbarScope { GameScreen, AllScreens }
 
@@ -15,9 +16,9 @@ public enum TaskbarScope { GameScreen, AllScreens }
 public enum TaskbarMode { Behind, Hide }
 
 // Stretch: taskbar auto-hide while playing, so maximized windows reach the bottom of the screen.
-// DefaultWidth / DefaultHeight 0 = 16:9 at the height of the main screen.
+// DefaultWidth / DefaultHeight 0 = 16:9 at the height of the main screen. Sort: the game list's order (0 added, 1 name, 2 active first).
 public record Settings(List<Game> Games, TaskbarScope Taskbar = TaskbarScope.GameScreen, bool Stretch = true, string? Lang = null,
-    int DefaultWidth = 0, int DefaultHeight = 0, TaskbarMode Mode = TaskbarMode.Behind)
+    int DefaultWidth = 0, int DefaultHeight = 0, TaskbarMode Mode = TaskbarMode.Behind, int Sort = 0)
 {
     // %APPDATA%, not next to the exe: survives updates and is the same for the portable and the installed copy
     public static readonly string Dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), App.Name);

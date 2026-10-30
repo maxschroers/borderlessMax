@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 
 namespace BorderlessMax;
@@ -22,7 +23,9 @@ public class GameRow : INotifyPropertyChanged
     }
 
     public Game Game { get; private set; }
-    public ImageSource? Icon => Game.Path is null ? null : Apps.Icon(Game.Path);
+    public ImageSource? Icon => (Game.Icon ?? Game.Path) is string file ? Apps.Icon(file) : null;
+    public string PathText => Game.Path ?? L.I["path_unknown"];
+    public string IconText => Game.Icon ?? Game.Path ?? L.I["path_unknown"];
     public bool Enabled { get => Game.Enabled; set => Update(Game with { Enabled = value }); }
 
     public string Name
@@ -77,8 +80,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         L.Languages.Select(l => new LangItem(l.Key, l.Value, (ImageSource)Application.Current.FindResource("Flag_" + l.Key))).ToList();
     public string VersionText { get; } = Installer.Version == "dev" ? "dev" : "v" + Installer.Version;
 
-    int scope, mode;
+    int scope, mode, sort;
     bool stretch;
+    readonly ICollectionView view; // the list as shown: searched and sorted, Rows keeps the order they were added in
     bool loading = true;
     Installer.Update? update;
     public bool Quitting;
@@ -96,10 +100,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         var (w, h) = s.DefaultSize;
         Default = new ResolutionChoice(w, h);
         Default.PropertyChanged += (_, _) => Persist();
-        Selected = Rows.FirstOrDefault();
         scope = (int)s.Taskbar;
         mode = (int)s.Mode;
         stretch = s.Stretch;
+        view = CollectionViewSource.GetDefaultView(Rows);
+        view.Filter = o => Matches((GameRow)o, search.Text);
+        SortIndex = s.Sort;
+        Selected = view.Cast<GameRow>().FirstOrDefault(); // the top one as sorted
         ShowAction = !Installer.Installed; // portable: offer the install
         loading = false;
     }
@@ -108,10 +115,38 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public int ModeIndex { get => mode; set { mode = value; Persist(); Changed(nameof(Hiding)); } }
     public bool Hiding => mode == (int)TaskbarMode.Hide;
     public bool Stretch { get => stretch; set { stretch = value; Persist(); } }
+
+    // ponytail: sorted / filtered when the sort or the search changes, not while a game is edited (a renamed game keeps its place)
+    public int SortIndex
+    {
+        get => sort;
+        set
+        {
+            sort = value;
+            using (view.DeferRefresh())
+            {
+                view.SortDescriptions.Clear();
+                if (sort == 2) view.SortDescriptions.Add(new(nameof(GameRow.Enabled), ListSortDirection.Descending));
+                if (sort > 0) view.SortDescriptions.Add(new(nameof(GameRow.Name), ListSortDirection.Ascending));
+            }
+            Persist();
+        }
+    }
+
+    // every word must appear in the name or the exe, like the picker
+    static bool Matches(GameRow r, string query) =>
+        query.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(w => $"{r.Name} {r.Exe}".Contains(w, StringComparison.OrdinalIgnoreCase));
+
+    void Search_Changed(object sender, TextChangedEventArgs e)
+    {
+        placeholder.Visibility = search.Text == "" ? Visibility.Visible : Visibility.Collapsed;
+        view.Refresh();
+    }
     public bool Autostart { get => Installer.Autostart; set => Installer.SetAutostart(value); }
     public bool NoGames => Rows.Count == 0;
     public GameRow? Selected { get; set { field = value; Changed(); Changed(nameof(HasSelection)); } }
     public bool HasSelection => Selected is not null;
+    public bool ShowDetails { get; set { field = value; Changed(); } }
 
     public string Lang
     {
@@ -128,7 +163,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (loading) return;
         Helper.Settings = new Settings(Rows.Select(r => r.Game).ToList(), (TaskbarScope)scope, stretch, L.I.Lang, Default.Width, Default.Height,
-            (TaskbarMode)mode);
+            (TaskbarMode)mode, sort);
         Helper.Settings.Save();
         Helper.ShowTaskbar(); // the next tick hides it again with the new settings
         foreach (var r in Rows) r.Refresh(); // sizes that follow the default
@@ -153,13 +188,15 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         Persist();
     }
 
-    // any image or exe; stored as the game's Path, which only gives it its icon
+    // any image or exe; the game's Path stays as it is
     void Icon_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog { Filter = $"{L.I["icons"]}|{string.Join(";", Apps.ImageTypes.Select(t => "*" + t))};*.exe" };
         if (Selected is null || dialog.ShowDialog(this) != true) return;
-        Selected.Update(Selected.Game with { Path = dialog.FileName });
+        Selected.Update(Selected.Game with { Icon = dialog.FileName });
     }
+
+    void Details_Click(object sender, RoutedEventArgs e) => ShowDetails = !ShowDetails;
 
     void Remove_Click(object sender, RoutedEventArgs e)
     {

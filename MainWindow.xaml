@@ -59,6 +59,21 @@
                 <TextBlock Text="{Binding [add_game], Source={x:Static local:L.I}}" />
               </StackPanel>
             </Button>
+            <!-- search by name / exe, sort -->
+            <DockPanel DockPanel.Dock="Top" Margin="12,0,12,8">
+              <ComboBox DockPanel.Dock="Right" Width="150" Margin="8,0,0,0" SelectedIndex="{Binding SortIndex}"
+                        AutomationProperties.Name="{Binding [sort], Source={x:Static local:L.I}}">
+                <ComboBoxItem Content="{Binding [sort_added], Source={x:Static local:L.I}}" />
+                <ComboBoxItem Content="{Binding [sort_name], Source={x:Static local:L.I}}" />
+                <ComboBoxItem Content="{Binding [sort_enabled], Source={x:Static local:L.I}}" />
+              </ComboBox>
+              <Grid>
+                <TextBox x:Name="search" TextChanged="Search_Changed"
+                         AutomationProperties.Name="{Binding [search_games], Source={x:Static local:L.I}}" />
+                <TextBlock x:Name="placeholder" Text="{Binding [search_games], Source={x:Static local:L.I}}" Foreground="{StaticResource Dim}"
+                           FontSize="15" FontWeight="SemiBold" Margin="13,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False" />
+              </Grid>
+            </DockPanel>
             <Grid>
               <TextBlock Text="{Binding [no_games], Source={x:Static local:L.I}}" Style="{StaticResource Hint}" Margin="16,4"
                          Visibility="{Binding NoGames, Converter={StaticResource Vis}}" />
@@ -107,6 +122,33 @@
               <TextBox Text="{Binding Exe, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}"
                        AutomationProperties.Name="{Binding [exe], Source={x:Static local:L.I}}" />
               <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="{Binding [exe_hint], Source={x:Static local:L.I}}" />
+
+              <!-- details, folded: where the game's file and its icon are -->
+              <Button Style="{StaticResource ButtonBase}" Background="Transparent" Foreground="{StaticResource Muted}" Padding="0"
+                      MinHeight="0" HorizontalAlignment="Left" Margin="0,10,0,0" Click="Details_Click"
+                      AutomationProperties.Name="{Binding [details], Source={x:Static local:L.I}}">
+                <StackPanel Orientation="Horizontal">
+                  <Path Data="{StaticResource Chevron}" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="1.6" Width="16" Height="16" Margin="0,0,4,0" RenderTransformOrigin="0.5,0.5">
+                    <Path.Style>
+                      <Style TargetType="Path">
+                        <Setter Property="RenderTransform"><Setter.Value><RotateTransform Angle="-90" /></Setter.Value></Setter>
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding DataContext.ShowDetails, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                            <Setter Property="RenderTransform"><Setter.Value><RotateTransform Angle="0" /></Setter.Value></Setter>
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </Path.Style>
+                  </Path>
+                  <TextBlock Text="{Binding [details], Source={x:Static local:L.I}}" FontSize="13" />
+                </StackPanel>
+              </Button>
+              <StackPanel Margin="20,6,0,0"
+                          Visibility="{Binding DataContext.ShowDetails, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Vis}}">
+                <TextBlock Style="{StaticResource Hint}"><Run Text="{Binding [game_file], Source={x:Static local:L.I}, Mode=OneWay}" /><Run Text=": " /><Run Text="{Binding PathText, Mode=OneWay}" Foreground="{StaticResource Text}" /></TextBlock>
+                <TextBlock Style="{StaticResource Hint}" Margin="0,4,0,0"><Run Text="{Binding [icon_file], Source={x:Static local:L.I}, Mode=OneWay}" /><Run Text=": " /><Run Text="{Binding IconText, Mode=OneWay}" Foreground="{StaticResource Text}" /></TextBlock>
+              </StackPanel>
 
               <TextBlock Style="{StaticResource Label}" Margin="0,16,0,8" Text="{Binding [resolution], Source={x:Static local:L.I}}" />
               <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding UseDefault}" Content="{Binding DefaultText}" Margin="0,0,0,12" />

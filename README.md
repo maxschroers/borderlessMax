@@ -36,7 +36,9 @@ borderlessMax runs in the tray and fixes both while a game from your list has fo
 - **Default resolution** for all games, from the list your screens really support (with aspect ratio) or any custom
   size.
 - **Layout like the NVIDIA app**: an icon rail with *Games* and *Settings*. Games shows the list on the left and the
-  selected game's settings on the right (name, exe, own resolution, icon: any image or exe, on / off, remove).
+  selected game's settings on the right (name, exe, own resolution, icon: any image or exe, on / off, remove). The list
+  has a search field and sorts by date added, name or active first; *Details* under the exe shows where the game's file
+  and its icon are.
 - **Saves as you go**: every change is stored right away, no save button.
 - **Discord look**, the same dark theme as [captureMax](https://github.com/maxschroers/captureMax): dark panels,
   blurple switches and buttons, a dark title bar.
